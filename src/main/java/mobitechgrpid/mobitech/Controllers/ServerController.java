@@ -31,7 +31,7 @@ public class ServerController{
     multipliers procesing = new multipliers();
     dataToDb databaseOperations = new dataToDb();
 
-    @RequestMapping("/test")            //Endpoint - http://192.168.0.156:8080/test?imei=124578&signalStrength=90&waterLevel=500
+    @RequestMapping("/test")            //Endpoint - :8080/test?imei=124578&signalStrength=90&waterLevel=500
     public DeviceDetails devdetails(
                                     @RequestParam(value="signalStrength") double signalStrength,
                                     @RequestParam(value="imei") String imei,
@@ -48,14 +48,12 @@ public class ServerController{
          //Processing before saving to DB take place here
         // if (waterLevel <= 90)        // Minimum water level
                //send_SMS_to_clustomer();
-              procesing.Logs(signalStrength, imei, waterLevel, deviceType);   //signalStrength, imei, waterLevel, deviceType
+              //procesing.Logs(signalStrength, imei, waterLevel, deviceType);   //signalStrength, imei, waterLevel, deviceType
               conn = databaseOperations.getRemoteConnection();
               databaseOperations.insertDataToDatabase(conn, imei, waterLevel, signalStrength, deviceType);
                                                 
             
-            
-              
-              //insertDataToDb.Connection(signalStrength, imei, waterLevel, deviceType);
+
                
         return new DeviceDetails( counter.incrementAndGet(),       //This is for the display (not configured)
                                   signalStrength,    

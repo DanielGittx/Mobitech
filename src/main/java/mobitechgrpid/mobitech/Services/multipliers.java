@@ -44,6 +44,7 @@ public class multipliers extends IOException{
 				csvOutput.write("signalStrength");
                                 csvOutput.write("imei");
                                 csvOutput.write("waterLevel");
+                                csvOutput.write("arithmetic");
 				csvOutput.endRecord();
 			}
 			// else assume that the file already has the correct header line

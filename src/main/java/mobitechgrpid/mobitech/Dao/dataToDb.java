@@ -17,9 +17,6 @@ import java.sql.Statement;
 import org.apache.log4j.Logger;
 
 
-
-
-
 public class dataToDb {
     
     final static Logger logger = Logger.getLogger(dataToDb.class); // https://www.mkyong.com/logging/log4j-hello-world-example/
@@ -32,12 +29,14 @@ public static Connection getRemoteConnection() {
       try {
         System.out.println ("Now Hitting the database............");
       Class.forName("com.mysql.jdbc.Driver");
-      String dbName = System.getProperty("");  /// Name of Database
-      String userName = System.getProperty("");      // Master User Name
-      String password = System.getProperty(""); // Master Password
-      String hostname = System.getProperty("");  //Endpoint
+      String dbName = System.getProperty("mobiwaterDB");  /// Name of Database
+      String userName = System.getProperty("mobiwater");      // Master User Name
+      String password = System.getProperty("mobiwater12345"); // Master Password
+      String hostname = System.getProperty("mobiwatersolutionstestinstance.cmej9y95xwfq.us-east-2.rds.amazonaws.com");  //Endpoint
       //String port = System.getProperty(3306);
       String jdbcUrl = "";
+      
+     
       logger.trace("Getting remote connection with connection string from environment variables.");
       System.out.println ("Getting remote connection with connection string from environment variables.............");
       Connection con = DriverManager.getConnection(jdbcUrl);
@@ -55,15 +54,15 @@ public void insertDataToDatabase (Connection conn, String imei, double waterLeve
             //java.sql.Timestamp date = new java.sql.Timestamp (javaDate.getTime());
             //imei, waterLevel, signalStrength, deviceType
        
-            String sql = "INSERT INTO DeviceData (imei,waterLevel,signalStrength, deviceType) VALUES(?,?,?,?)";
+            String sql = "INSERT INTO DeviceData (imei,waterLevel,signalStrength,deviceType) VALUES(?,?,?,?)";
  
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setString(1,imei);
             pstmt.setDouble(2,waterLevel);
             pstmt.setDouble(3,signalStrength);
-            pstmt.setString(4, deviceType);
-//            pstmt.setTimestamp(5,javaDate.getTime() );
-              pstmt.executeUpdate();
+            pstmt.setString(4,deviceType);
+///          pstmt.setTimestamp(5,javaDate.getTime() );
+            pstmt.executeUpdate();
    }
     
 }
