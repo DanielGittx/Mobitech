@@ -10,6 +10,7 @@ package mobitechgrpid.mobitech.Dao;
  * @author danial
  */
 import java.sql.Connection;
+import java.util.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -29,12 +30,9 @@ public static Connection getRemoteConnection() {
       try {
         System.out.println ("Now Hitting the database............");
       Class.forName("com.mysql.jdbc.Driver");
-      String dbName = System.getProperty("mobiwaterDB");  /// Name of Database
-      String userName = System.getProperty("mobiwater");      // Master User Name
-      String password = System.getProperty("mobiwater12345"); // Master Password
-      String hostname = System.getProperty("mobiwatersolutionstestinstance.cmej9y95xwfq.us-east-2.rds.amazonaws.com");  //Endpoint
-      //String port = System.getProperty(3306);
+
       String jdbcUrl = "";
+      
       
      
       logger.trace("Getting remote connection with connection string from environment variables.");
@@ -64,5 +62,20 @@ public void insertDataToDatabase (Connection conn, String imei, double waterLeve
 ///          pstmt.setTimestamp(5,javaDate.getTime() );
             pstmt.executeUpdate();
    }
-    
+public void insertSMSDeviceDataintoDatabase (Connection conn, String shortCode, String message, String linkId, String dateGeneratedOnDevice, String devicePhoneNumber ) throws SQLException
+   {
+            //java.sql.Timestamp date = new java.sql.Timestamp (javaDate.getTime());
+            //imei, waterLevel, signalStrength, deviceType
+                    
+            String sql = "INSERT INTO DeviceDataSMS (shortCode,message,linkId,dateGeneratedOnDevice,devicePhoneNumber) VALUES(?,?,?,?,?)";
+ 
+            PreparedStatement pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1,shortCode);
+            pstmt.setString(2,message);
+            pstmt.setString(3,linkId);
+            pstmt.setString(4,dateGeneratedOnDevice);
+            pstmt.setString(5,devicePhoneNumber);
+            pstmt.executeUpdate();
+   }
+  
 }

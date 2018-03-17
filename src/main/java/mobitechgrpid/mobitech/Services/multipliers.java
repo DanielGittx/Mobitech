@@ -87,8 +87,6 @@ public class multipliers extends IOException{
             e.printStackTrace();
         }
         
-        // Save in Database
-        
         recordsTracker++;
         System.out.print(obj);
     
