@@ -81,8 +81,9 @@ public class ServerController{
         
         ServerController ServController = new ServerController();
                 // Specify your login credentials
-        String username = "Mobiwater";
-        String apiKey   = "8f974225d78503fe7f0a1aef5f1324e782e6f71313f3eb96cbc383bc1358aa24";         //For production short code
+        String username = "";
+        String apiKey   = "";         //For production short code key
+       
         // Create a new instance of our awesome gateway class
         AfricasTalkingGateway gateway  = new AfricasTalkingGateway(username, apiKey);
         /*************************************************************************************
