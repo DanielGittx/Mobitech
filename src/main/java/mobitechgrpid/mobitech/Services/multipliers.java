@@ -24,6 +24,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class multipliers extends IOException{
     
     long recordsTracker =0;         //Transactions tracker - resets only when server is restarted
+    
+    public double CalculateTankVolume (double tankHeight, double tankBaseArea){
+        return (tankBaseArea * tankHeight);
+    }
+    
+    
+    
     public void Logs (double signalStrength, String imei, double waterLevel, String deviceType)      //Csv, Json Logs
     {
                 String outputFile = "H:/MOBITECH/MobitechServerLogs/devicedetails.csv";

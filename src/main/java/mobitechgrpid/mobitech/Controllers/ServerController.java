@@ -14,37 +14,45 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import mobitechgrpid.mobitech.Dao.dataToDb;
+import static mobitechgrpid.mobitech.Controllers.ServerController.printSQLException;
+import mobitechgrpid.mobitech.Dao.DataAccessObject;
+//import mobitechgrpid.mobitech.Dao.dataToDb;
 import mobitechgrpid.mobitech.Services.AfricasTalkingGateway;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import mobitechgrpid.mobitech.Services.multipliers;
+import mobitechgrpid.mobitech.Services.shortCodeProcessing;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @RestController
 public class ServerController{
-
-    private static final String template = "123456";   //unused
-    private final AtomicLong counter = new AtomicLong();  //Atomic Long is best to use in Multithreaded environments 
-
     multipliers procesing = new multipliers();
-    dataToDb databaseOperations = new dataToDb();
+    //dataToDb databaseOperations = new dataToDb();
+    //public Connection conn = databaseOperations.getRemoteConnection();
     
-    public Connection conn = databaseOperations.getRemoteConnection();
 
     @RequestMapping("/test")            //Endpoint - :8080/test?imei=124578&signalStrength=90&waterLevel=500
-    public DeviceDetails devdetails(
+   // public DeviceDetails devdetails(
+             public String devdetails(
                                     @RequestParam(value="signalStrength") double signalStrength,
-                                    @RequestParam(value="imei") String imei,
-                                    @RequestParam(value="waterLevel") double waterLevel,
-                                    @RequestParam(value="deviceType") String deviceType) throws SQLException
+                                    @RequestParam(value="tankID") String tankID,
+                                    @RequestParam(value="waterLevel") double waterLevel,//dateGeneratedOnDevice
+                                    @RequestParam(value="errorCode") String errorCode,
+                                    @RequestParam(value="dateGeneratedOnDevice") String dateGeneratedOnDevice,
+                                    @RequestParam(value="HW_version") String HW_version) throws SQLException
     {
                       /* ALGORITHM
                             1. Process data received
@@ -53,33 +61,30 @@ public class ServerController{
                             4. Find out how long this method takes to execute; should be optimized to facilitate many transactions concurrently
                             5. 
                      */
-         //Processing before saving to DB take place here
-        // if (waterLevel <= 90)        // Minimum water level
-               //send_SMS_to_clustomer();
-              //procesing.Logs(signalStrength, imei, waterLevel, deviceType);   //signalStrength, imei, waterLevel, deviceType
-              conn = databaseOperations.getRemoteConnection();
-              databaseOperations.insertDataToDatabase(conn, imei, waterLevel, signalStrength, deviceType);
-                                                
-            
+             // Date dateSavedOnDb = new Date();            //Now
+        
+       if (DataAccessObject.adddevicedata(waterLevel, signalStrength, HW_version, tankID,dateGeneratedOnDevice, errorCode))
+                                          
+        {
+            return "Sucess : Device data added";
+        }
+        else{
+            return "Error : Device data not added";
+        }
 
-               
-        return new DeviceDetails( counter.incrementAndGet(),       //This is for the display (not configured)
-                                  signalStrength,    
-                                  imei,              
-                                  waterLevel,        
-                                  deviceType);    
-                              
     }
     
     
     @RequestMapping("/sms")            //Endpoint - 
-    public void devdetails()
-    {       
+    public String devdetails()
+    { 
+        
+        ServerController ServController = new ServerController();
                 // Specify your login credentials
-        String username = "sandbox";
-        String apiKey   = "0bb0fa6cd0a312440049c71f983b5fdf218af684decc1d63136842f9c0b53f79";
+        String username = "Mobiwater";
+        String apiKey   = "8f974225d78503fe7f0a1aef5f1324e782e6f71313f3eb96cbc383bc1358aa24";         //For production short code
         // Create a new instance of our awesome gateway class
-        AfricasTalkingGateway gateway  = new AfricasTalkingGateway(username, apiKey, "sandbox");
+        AfricasTalkingGateway gateway  = new AfricasTalkingGateway(username, apiKey);
         /*************************************************************************************
             NOTE: If connecting to the sandbox:
             1. Use "sandbox" as the username
@@ -92,121 +97,154 @@ public class ServerController{
         // what you currently believe is the lastReceivedId. Specify 0 for the first
         // time you access the gateway, and the ID of the last message we sent you
         // on subsequent results
-        System.out.println("We've just hit AFRICASTALKING API.......");
+   
+        long _lastReceivedId = 0;
         
-        int lastReceivedId = 0;
-    
+        System.out.println("We've just hit AFRICASTALKING API; Next is SMSData fetched from the API.......");
+        
+            if ( DataAccessObject.LastReceivedId().get(0) != null) 
+                 _lastReceivedId = (Long)DataAccessObject.LastReceivedId().get(0) ;  
+
+         long lastReceivedId = _lastReceivedId;
+          System.out.println("retrieved lastReceivedId: " + _lastReceivedId);
+              
+        
+        
+            JSONArray results = null;
+            JSONObject result = null;
+            boolean flag_lastRecordIn = false;
         // Here is a sample of how to fetch all messages using a while loop
         try {
-            JSONArray results = null;
+
             do {
                 results = gateway.fetchMessages(lastReceivedId);
                 for(int i = 0; i < results.length(); ++ i) {
-                    JSONObject result = results.getJSONObject(i);
+                    result = results.getJSONObject(i);
+                    
                     System.out.println("From: " + result.getString("from"));
                     System.out.println("To: " + result.getString("to"));
                     System.out.println("Message: " + result.getString("text"));
                     System.out.println("Date: " + result.getString("date"));
                     System.out.println("linkId: " + result.getString("linkId"));
-                    lastReceivedId = result.getInt("id");
+                    lastReceivedId = result.getLong("id");
+                    System.out.println("saved lastReceivedId: " + lastReceivedId);
                     
-//insertSMSDeviceDataintoDatabase (Connection conn, String shortCode, String message, String linkId, String dateGeneratedOnDevice, String devicePhoneNumber )
-                    if (lastReceivedId == 10) {
-                    databaseOperations.insertSMSDeviceDataintoDatabase(conn, 
-                           result.getString("to"), result.getString("text"), 
-                           result.getString("linkId"), 
-                           result.getString("date"), 
-                           result.getString("from"));
-                 
-                   System.out.print("Successfully loaded SMS into database.........!");
+                    try {
+                    ServController.processing(result, lastReceivedId );               //Save lastReceivedId
+                    }catch (Exception ex)
+                    {
+                        System.out.println("Processing function exception -> " +ex );
                     }
-                   
-                  
+      
                 }
-            } while ( results.length() > 0 );
-        } catch (Exception e) {
-            System.out.println("Caught an Exception: " + e.getMessage());
-    }
-    // NOTE: Be sure to save lastReceivedId here for next time
-    }
- 
-            // waterLevel Status  
-            //  Realtime/most recent record  - 0
-            //  weekly    - 1
-            //  monthly   - 2
-            //  yearly    - 3
-            //  Location          - Name of tank, longitude&latitude
-    
-        @RequestMapping("/dashboard")            //Endpoint - 
-        public DeviceDetailsToDashboard viewTable( 
-            @RequestParam(value="waterLevelStatus") int waterLevelStatus, 
-            @RequestParam(value="tankID") int tankID) throws SQLException {
-            
-            
-           Statement stmt = null;
-           String query = null;
-           JSONObject tablecontents = new JSONObject();   //unused
-           String Imei = null;
-           double waterlevel = 0;
-           double signalquality = 0;
-           String devicetype = null;
-           String latitude = null;
-           String Longitude = null;
-    
-    
-        switch (waterLevelStatus) {
-            case 0: //Most Recent record
-                query = "SELECT * FROM mobiwaterDB.DeviceData  WHERE tankId = '"+tankID+"' ORDER BY recordid DESC LIMIT 1" ;     // Realtime - Most recent record 
-                break;
-            case 1: //Last 1 Week
-                query = "select * from mobiwaterDB.DeviceData where  `dataSavedOnDB` >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK) AND tankId = '"+tankID+"' ";
-                break;
-            case 2:  //Last 1 Month
-                query = "select * from mobiwaterDB.DeviceData where  `dataSavedOnDB` >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND tankId = '"+tankID+"' ";
-                break;
-            case 3:  //Last 1 Year
-                query = "select * from mobiwaterDB.DeviceData where  `dataSavedOnDB` >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND tankId = '"+tankID+"' ";
-                break;
-            default:
-                query = "SELECT * FROM mobiwaterDB.DeviceData  WHERE tankId = '"+tankID+"' ORDER BY recordid DESC LIMIT 1" ;
+                  // Error pops - Exception on fetch 
                 
-                break;
+                  // flag_lastRecordIn = true;
+                
+            } 
+            
+            while ( results.length() > 0 );
+        } catch (Exception e) {
+            System.out.println("Caught an Exception when tring to fetch SMS from Africastalking: " + e.getMessage());
         }
-
-    try {
-        stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(query);
-        while (rs.next()) {
-             Imei = rs.getString("imei");
-             waterlevel = rs.getInt("waterLevel");
-             signalquality = rs.getFloat("signalStrength");
-             devicetype = rs.getString("deviceType");
-             
-                  System.out.print("Returning JSON 1");
-                  return new DeviceDetailsToDashboard( signalquality,  Imei,  waterlevel,  devicetype); 
-         
-        }
-    } catch (SQLException e ) {
-              printSQLException(e);
         
-    } finally {
-        if (stmt != null) { stmt.close(); }
-    }
-                 // We wont get here if everything went okay!
-                  return new DeviceDetailsToDashboard( signalquality,  Imei,  waterlevel,  devicetype);                     
+        /*
+           if(flag_lastRecordIn)
+           {
+            if(result!=null){
+                try {
+          
+                   if (sCodeProc.SMSMessageProcessing(result.getString("text")) >= 0 );    // water level to store in dB
+                    {
+                       
+                       double level = sCodeProc.SMSMessageProcessing(result.getString("text"));
+                       String tankID = result.getString("from");
+                       tankID = tankID.substring(1,13);         //+254792714708 ignore the + for easy query of tankID
+                       //databaseOperations.insertSMSProcessedDataToDatabase(conn, level, tankID);  //double level, string devicephonenumber
+                       //Date dateSavedOnDb = new Date();            //Now
+                       if (level >= 0 || (sCodeProc.SMSMessageProcessing(result.getString("text")) != 1 ))  {        //no negtives in DB --- TODO:- Find out how -ve could have come about in database
+                          DataAccessObject.addSMSProcessedData(level, tankID, lastReceivedId);
+                           System.out.println("lastReceivedId : " +lastReceivedId);  
+                          
+                       }
+                       //System.out.println("Processed sms stored in DBase");
+                       //return "Message Identifier missing";
+                        //store in db here
+                    }
+                   if (sCodeProc.SMSMessageProcessing(result.getString("text")) ==  -1);           //Debugging return value
+                        //System.out.println("Null Message Type -> ");
+                        //return "Message Identifier missing on this SMS -> "+result.getString("text");
+                        
+                   if (sCodeProc.SMSMessageProcessing(result.getString("text")) ==  -2);
+                        //System.out.println(" Processing... -> "+result.getString("text"));
+                        //return "Processing... -> "+result.getString("text");
+                          
+                    }catch (JSONException ex)
+                    {
+                           return "SQL or JSON Exception -fetch- "+ex;
+                    }
+                   }
+            
+                   flag_lastRecordIn=false;
+                   
+                    if ( DataAccessObject.LastReceivedId().get(0) != null){
+                         lastReceivedId = (Long)DataAccessObject.LastReceivedId().get(0) ;
+                         System.out.println("lastReceivedId 1 : " +lastReceivedId);
+                     }
+                     else{       //no need to evaluate this really!
+                         lastReceivedId = lastReceivedId;
+                         System.out.println("lastReceivedId 2 : " +lastReceivedId);
+
+                     }
+                   
+               
+           }
+        */
     
-}
-    public static void printSQLException(SQLException ex) {
+    // NOTE: Be sure to save lastReceivedId here for next time
+       return "Processed sms stored in DBase";
+    }
+    
+ public void processing (JSONObject result, long lastReceivedId )  {
+    shortCodeProcessing sCodeProc = new shortCodeProcessing();
+    if  (result != null)
+        
+     try {
+          
+	   if (sCodeProc.SMSMessageProcessing(result.getString("text")) >= 0 );    // water level to store in dB
+		{
+		   
+		   double level = sCodeProc.SMSMessageProcessing(result.getString("text"));
+		   String tankID = result.getString("from");
+		   tankID = tankID.substring(1,13);         //+254792714708 ignore the + for easy query of tankID
+		   //databaseOperations.insertSMSProcessedDataToDatabase(conn, level, tankID);  //double level, string devicephonenumber
+		   //Date dateSavedOnDb = new Date();            //Now
+		   if (level < 0 || (sCodeProc.SMSMessageProcessing(result.getString("text")) < 0 ) )  {        //no negtives in DB --- TODO:- Find out how -ve could have come about in database                   
+			   System.out.println("No negatives in DB");      
+		   }else{
+				DataAccessObject.addSMSProcessedData(level, tankID, lastReceivedId);
+		   }
+
+		}
+			  
+		}catch ( JSONException ex)
+		{
+			  // return "SQL or JSON Exception -fetch- "+ex;
+                        System.out.println("SQL or JSON Exception -fetch- "+ex );
+		}
+    }
+      
+   public static void printSQLException(SQLException ex) {
     for (Throwable e : ex) {
       if (e instanceof SQLException) {
         if (ignoreSQLException(((SQLException)e).getSQLState()) == false) {
           e.printStackTrace(System.err);
-          System.err.println("SQLState: " + ((SQLException)e).getSQLState());
-          System.err.println("Error Code: " + ((SQLException)e).getErrorCode());
-          System.err.println("Message: " + e.getMessage());
+//          System.err.println("SQLState: " + ((SQLException)e).getSQLState());
+//          System.err.println("Error Code: " + ((SQLException)e).getErrorCode());
+//          System.err.println("Message: " + e.getMessage());
           Throwable t = ex.getCause();
           while (t != null) {
-            System.out.println("Cause: " + t);
+           // System.out.println("Cause: " + t);
             t = t.getCause();
           }
         }
@@ -227,6 +265,21 @@ public class ServerController{
       return true;
     return false;
   }
-        
+    
+    
      
+
+        // Sets custom port number on runtime
+        // This is to move away from default 8080 set by embedded Tomcat
+
+   @Configuration
+   public class ServletConfig {
+    @Bean
+    public EmbeddedServletContainerCustomizer containerCustomizer() {
+        return (container -> {
+            container.setPort(8080);        
+        });
+    }
+ }
+       
 }

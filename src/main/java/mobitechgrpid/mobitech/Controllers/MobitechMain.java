@@ -14,31 +14,59 @@ package mobitechgrpid.mobitech.Controllers;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import mobitechgrpid.mobitech.Dao.dataToDb;
+import java.time.LocalDateTime;
+import java.util.Date;
+//import mobitechgrpid.mobitech.Dao.dataToDb;
+import mobitechgrpid.mobitech.Services.CallAPIProxy;
+//import mobitechgrpid.mobitech.Services.SendEmail;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import mobitechgrpid.mobitech.Services.shortCodeProcessing;
 //import mobitechgrpid.mobitech.Services.dashboardAPIs;
 
+
+import java.util.List;
+import mobitechgrpid.mobitech.Dao.DataAccessObject;
+
+
 @SpringBootApplication
 public class MobitechMain {
     
+    
+    
     public static void main(String[] args) throws SQLException {
-         Connection conn;
+         //Connection conn;
+         //SendEmail se = new SendEmail();
         
         SpringApplication.run(MobitechMain.class, args);
+   
+        System.out.println("Service that refreshes Africas talking SMS FETCHING API (every 30 minutes) ");
+        CallAPIProxy callapi = new CallAPIProxy(1800000);    ///30 MINUTES REFRESH
+        System.out.println("Service started...");
         
-        //shortCodeProcessing scp = new shortCodeProcessing();
-        //dashboardAPIs dashApi = new dashboardAPIs();
-         //dataToDb databaseOperations = new dataToDb();
+       
+               
         
         
-        //conn = databaseOperations.getRemoteConnection();
-        //dashApi.viewTable(conn,0);
-        
-        //scp.SMSReceiving();      //Code running ok; needs testing facilitated by afrocastalking guys
-        //System.out.println(scp.sum(10, 20));             //Testing ok :)
-     
     }
-}
+        
+        
+        
+      /*  
+           String from = "danmburu.gitau@gmail.com";
+           String to= "dangittxdev@gmail.com";
+           String subject= "ping";
+           String msg= "Testing email sending";
+        
+           
+           try {
+                       ///(String from, String to, String subject, String msg)
+                      //se.sendMail(from, to, subject, msg);
+           }catch (NullPointerException np){
+             System.out.println("EXCEPTION -> " +np);
+           }
+           */
+    }
+       
+

@@ -12,154 +12,156 @@ package mobitechgrpid.mobitech.Services;
  *
  * @author danial
  */
+import java.sql.Connection;
 import java.sql.SQLException;
 import static mobitechgrpid.mobitech.Controllers.ServerController.printSQLException;
+import mobitechgrpid.mobitech.Dao.DataAccessObject;
+//import mobitechgrpid.mobitech.Dao.dataToDb;
 import org.json.*;
 
-public class shortCodeProcessing {
-    
-    public static void SMSReceiving ()
-    {
-        // Specify your login credentials
-        String username = "sandbox";
-        String apiKey   = "0bb0fa6cd0a312440049c71f983b5fdf218af684decc1d63136842f9c0b53f79";
-        // Create a new instance of our awesome gateway class
-        AfricasTalkingGateway gateway  = new AfricasTalkingGateway(username, apiKey, "sandbox");
-        /*************************************************************************************
-            NOTE: If connecting to the sandbox:
-            1. Use "sandbox" as the username
-            2. Use the apiKey generated from your sandbox application
-                https://account.africastalking.com/apps/sandbox/settings/key
-            3. Add the "sandbox" flag to the constructor
-            AfricasTalkingGateway gateway = new AfricasTalkingGateway(username, apiKey, "sandbox");
-        **************************************************************************************/
-        // Our gateway will return 10 messages at a time back to you, starting with
-        // what you currently believe is the lastReceivedId. Specify 0 for the first
-        // time you access the gateway, and the ID of the last message we sent you
-        // on subsequent results
-        int lastReceivedId = 0;
-                    JSONArray results = null;
-            JSONObject result = null;
-    
-        // Here is a sample of how to fetch all messages using a while loop
-        try {
-
-            do {
-                results = gateway.fetchMessages(lastReceivedId);
-                for(int i = 0; i < results.length(); ++ i) {
-                    result = results.getJSONObject(i);
-                    System.out.println("From: " + result.getString("from"));
-                    System.out.println("To: " + result.getString("to"));
-                    System.out.println("Message: " + result.getString("text"));
-                    System.out.println("Date: " + result.getString("date"));
-                    System.out.println("linkId: " + result.getString("linkId"));
-                    lastReceivedId = result.getInt("id");
-                    
-                    
-                }
-            } while ( results.length() > 0 );
-  
-        } catch (Exception e) {
-            System.out.println("Caught an Exception: " + e.getMessage());
-    }
-    // NOTE: Be sure to save lastReceivedId here for next time
-    
-       shortCodeProcessing scproc = new shortCodeProcessing();
-       try{
-              scproc.SMSMessageProcessing(result.getString("text"));   //Null pointer Exception is handled inside SMSMessageProcessing()
-          }
-       catch (Exception e ) {
-              System.out.println("Exception trying to process SMS messages: '"+e+"' ");
-              //e.printStackTrace();
-              
-        
-    }
-    }
-    
-public void SMSMessageProcessing (String SMSmessage){
-       
-        String messageType = null;
+public class shortCodeProcessing implements DeviceMessageConstants{
    
-        if (SMSmessage != null){
-        for(int i=0;i<SMSmessage.length();i++){
-        //for (char character: SMSmessage.toCharArray()){
-            //System.out.println(SMSmessage.charAt(i));
-          if (SMSmessage.charAt(i) == 'l' && SMSmessage.charAt(i+1) == ':' ) //Normal
-            {
-                messageType = "Normal";
-                System.out.println(messageType);
-                System.out.println("Success algo.....");
-                //SMSmessage = null;
-                break;   //We found what we we looking for :)
-            }
-            else if (SMSmessage.charAt(i) == 'm' && SMSmessage.charAt(i+1) == ' ')  // Alarm - Either High or Low level Alarm
-            {
-                messageType = "LevelAlarm";
-                System.out.println(messageType);
-                System.out.println("Success algo.....");
-                //SMSmessage = null;
-                break;   //We found what we we looking for :)
-            }
-
-            else if (SMSmessage.charAt(i) == 'r' && SMSmessage.charAt(i+1) == ' ')  // Recover - Either Hoigh or Low level Recover
-            {
-                messageType = "LevelRecoverAlarm";
-                System.out.println(messageType);
-                System.out.println("Success algo.....");
-                //SMSmessage = null;
-                break;   //We found what we we looking for :)
-            }
-            
-        }
-        }
-        else {System.out.println("Failure: SMSmessage is null - SMS Processing Stopped!");};
+public double SMSMessageProcessing (String SMSmessage){             //Return liquid level: dont care normal, alarm , recover
+       // example -> SMSmessage = Mobiwater WaterLevel:0.13,Normal 
+       
+       //dataToDb toDB = new dataToDb();
+       //Connection conn = toDB.getRemoteConnection();
+        // example -> SMSmessage = Mobiwater WaterLevel:0.13,Normal 
+                          //  Mobiwater Level Low Alarm 0.0000.06;2018-03-26;09:31;     - Alarm
+                          //  Mobiwater Level High Recover 0.0010;2018-03-12;15:05;     - Recover
+                          //  Mobiwater Level Low Recover 1.28;2018-04-23 18:16;        -TRM Unparsed data :( 
         
-        if (messageType != null){
+       
+        //  String SMSmessage = "Mobiwater Level Low Alarm 0.06;2018-03-26;09:31;";         // testing
+        //  String SMSmessage = "Mobiwater Level:0.1653,Normal";
+       
+        
+        String messageType = null;
+        String SMSmessageReadyForParsing = null;
+        String SMSmessageIdentifier = "Mobiwater Level";
+        String SMSmessage_substring;
+        String []tempbuff;
+        
+        String level = null;
+        String date = null;
+        String time=null;
+        
+        SMSmessage_substring = SMSmessage.substring(0, 15);
+        
+        try{
+        
+       if (SMSmessage_substring.equals(SMSmessageIdentifier)) {
+           
+           
+        if ( SMSmessage.length() > 100 && SMSmessage.length() < 110)              //Sms message from Killah device
+         {
+            String[] SMSmessageWithoutKeyword = SMSmessage.split(" ");
+	    String[] tokens = SMSmessageWithoutKeyword[1].split(":");
+            if (tokens[1].equals("ID")) { 
+                  double water_level = Double.parseDouble(tokens[11]);  
+                  double signal_strength = Double.parseDouble(tokens[9]);
+                  if (water_level >= 0) //+VE Levels
+                       DataAccessObject.adddevicedata(water_level, signal_strength, tokens[13], tokens[2], tokens[6]+tokens[7], tokens[15]);
+                  
+                  return -1;
+           }
+           
+        }
+    
+        String[] SMSmessageWithoutKeyword = SMSmessage.split(" ");                 // Pick park of string without keyword
+                 if (SMSmessageWithoutKeyword.length < 3){
+     
+                 for (String t:SMSmessageWithoutKeyword) 
+                        SMSmessageReadyForParsing = SMSmessageWithoutKeyword[1]; 
+            
+                 for(int i=0;i<SMSmessageReadyForParsing.length();i++){
+                    if (SMSmessageReadyForParsing.charAt(i) == 'l' && SMSmessageReadyForParsing.charAt(i+1) == ':' ) //Normal
+                     {
+                      messageType = "Normal";
+                      //System.out.println(messageType);
+                      break;   //We found what we we looking for :)
+                     }
+                   }
+            
+                } else
+                {
+     
+                 for (String t:SMSmessageWithoutKeyword) {                             //Mobiwater Level Low Alarm 0.0000.06;2018-03-26;09:31;
+                         SMSmessageReadyForParsing = SMSmessageWithoutKeyword[4];        //[3] - Alarm, //[4] - 0.0000.06;2018-03-26;09:31;
+                       messageType = "AlarmOrRecover";                               
+                 }
+   
+                }
+  
+        if (messageType != null){          
             String waterLevelString = null;
             String liquidLevelNormalRaw = null;
-            String waterLevelAlarmStringRaw = null;
-            String waterLevelRecoverStringRaw = null;
+            DataAccessObject dao = new DataAccessObject();
             
            switch (messageType)
             {
                 case "Normal":
-			String[] tokens = SMSmessage.split(":");
+			String[] tokens = SMSmessageReadyForParsing.split(":");
 			for (String t:tokens){  
                             waterLevelString = tokens[0];
                             liquidLevelNormalRaw = tokens[1];     //
      			}
                         
                     String liquidLevelNormalRawRefined = liquidLevelNormalRaw.substring(0, liquidLevelNormalRaw.indexOf(',')); //Copy string untill we get ','
-     	            System.out.println(waterLevelString);   //Useless string 
-                    System.out.println(liquidLevelNormalRawRefined);   //Save Water Level Normal in DB
-                
+     	            System.out.println("waterLevelStringNormal: "+liquidLevelNormalRawRefined);   //Useless string 
+                    //System.out.println(liquidLevelNormalRawRefined);   //Save Water Level Normal in DB
+                    try{
+                    double liquidLevelNormalRawRefined_double = Double.parseDouble(liquidLevelNormalRawRefined);
+                    //toDB.insertSMSProcessedDataToDatabase(conn,liquidLevelNormalRawRefined_double);
+                    return liquidLevelNormalRawRefined_double;
+                    }
+                    catch (NumberFormatException ex ){
+                        System.out.println( ex);
+                    }
+                     
                     break;
-                case "LevelAlarm": //High or Low Alarm
-                    String[] tokensLevelAlarm = SMSmessage.split(" ");
-                    	for (String t:tokensLevelAlarm){  
-                            waterLevelAlarmStringRaw = tokensLevelAlarm[3];  
-                            //liquidLevelNormalRaw = tokensLevelAlarm[1];     //
-     			}
-                    String waterLevelAlarmStringRefined = waterLevelAlarmStringRaw.substring(0, waterLevelAlarmStringRaw.indexOf(';'));
-                    System.out.println(waterLevelAlarmStringRefined);   //Save Water Level Alarm in DB
-                    break;
+                        
+                case "AlarmOrRecover": //High or Low Recover
+                    String[] alarmOrRecoverParse = SMSmessageReadyForParsing.split(";");  //Mobiwater Level Low Alarm 0.0000.06;2018-03-26;09:31;
+                     for (String x : alarmOrRecoverParse) {
+                         level = alarmOrRecoverParse[0];
+                         date = alarmOrRecoverParse[1];
+                         time = alarmOrRecoverParse[2];
+   
+                     }
+                     
+                        System.out.println("level:"+level+"");
+                        System.out.println("date:"+date+"");
+                        System.out.println("time:"+time+"");
                     
-                case "LevelRecoverAlarm": //High or Low Recover
-                    String[] tokensLevelRecover = SMSmessage.split(" ");
-                    	for (String t:tokensLevelRecover){  
-                            waterLevelRecoverStringRaw = tokensLevelRecover[3];  
-                            //liquidLevelNormalRaw = tokensLevelAlarm[1];     //
-     			}
-                    String waterLevelRecovertringRefined = waterLevelRecoverStringRaw.substring(0, waterLevelRecoverStringRaw.indexOf(';'));
-                    System.out.println(waterLevelRecovertringRefined);   //Save Water Level Recover in DB
+                    try{
+                    double waterLevelRecovertringRefined_double = Double.parseDouble(level);
+                    //toDB.insertSMSProcessedDataToDatabase(conn,waterLevelRecovertringRefined_double);
+                    return waterLevelRecovertringRefined_double;
+                    }
+                    catch (NumberFormatException ex ){
+                        System.out.print( ex);
+                    }
                     
                     break;
                  default:
             
             }
-        }else {System.out.println("Failure: messageType is null - Message Processing Stopped!");}
-        
+          }else {return -1 ;}  
+
+        } else {return -2 ;}
+ 
+ 
+        }catch (NullPointerException | ArrayIndexOutOfBoundsException np)
+        {
+            System.out.println("Null pointer or Index out of bounds Exception -> "+np);
+            System.out.println("SMSmessage -> "+SMSmessage);
+            System.out.println("messageType -> "+messageType);
+            System.out.println("SMSmessageReadyForParsing -> "+SMSmessageReadyForParsing);
+        }
+ 
+       return -1;
     }
-    
-    
 }
+
+

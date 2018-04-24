@@ -111,11 +111,11 @@ public class AfricasTalkingGateway
     }
     
 
-    public JSONArray fetchMessages(int lastReceivedId_) throws Exception
+    public JSONArray fetchMessages(long lastReceivedId_) throws Exception       // Changed int lastReceivedId_ to long lastReceivedId_
     {
     	String requestUrl = getSmsUrl() + "?" +
 	    URLEncoder.encode("username", "UTF-8") + "=" + URLEncoder.encode(_username, "UTF-8") +
-	    "&" + URLEncoder.encode("lastReceivedId", "UTF-8") + "=" + URLEncoder.encode(Integer.toString(lastReceivedId_), "UTF-8");
+	    "&" + URLEncoder.encode("lastReceivedId", "UTF-8") + "=" + URLEncoder.encode(Long.toString(lastReceivedId_), "UTF-8");
     	
     	String response = sendGETRequest(requestUrl);
     	if(responseCode == HTTP_CODE_OK) {
