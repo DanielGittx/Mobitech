@@ -1,5 +1,5 @@
 package mobitechgrpid.mobitech.Controllers;
-// Generated Apr 23, 2018 4:25:48 PM by Hibernate Tools 4.3.1
+// Generated May 28, 2018 2:56:49 PM by Hibernate Tools 4.3.1
 
 
 import java.util.Date;
@@ -17,12 +17,13 @@ import javax.persistence.TemporalType;
  */
 @Entity
 @Table(name="devicedetails"
-    ,catalog="mobiwaterlocal"
+    ,catalog="mobiwaterDB"
 )
 public class Devicedetails  implements java.io.Serializable {
 
 
      private Integer recordid;
+     private Double currentTankCapacity;
      private String dateGeneratedOnDevice;
      private Date dateSavedOnDb;
      private String errorCode;
@@ -31,14 +32,21 @@ public class Devicedetails  implements java.io.Serializable {
      private Double signalStrength;
      private String tankId;
      private double waterLevel;
-	
-    public Devicedetails(double waterLevel, String tankID, Long lastReceivedId) {
-        this.waterLevel = waterLevel;
-        this.tankId = tankID;
-        this.lastReceivedId = lastReceivedId;
+
+    public Devicedetails() {
     }
-                        //waterLevel,  signalStrength,  hwVersion, tankId,   dateGeneratedOnDevice,  errorCode
-    public Devicedetails(double  waterLevel, double signalStrength , String hwVersion, String tankId, String dateGeneratedOnDevice,String errorCode ) {
+
+	                    //  waterLevel,        tankID,       currentTankCapacity
+    public Devicedetails(double waterLevel, String tankId,Double currentTankCapacity, Date DateSavedOnDb) {  //SMS
+        this.currentTankCapacity = currentTankCapacity;
+        this.waterLevel = waterLevel;
+        this.tankId = tankId;
+        this.dateSavedOnDb = DateSavedOnDb;
+   
+    }
+                           
+    public Devicedetails(Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel, Date DateSavedOnDb) {
+       this.currentTankCapacity = currentTankCapacity;
        this.dateGeneratedOnDevice = dateGeneratedOnDevice;
        this.errorCode = errorCode;
        this.hwVersion = hwVersion;
@@ -46,7 +54,6 @@ public class Devicedetails  implements java.io.Serializable {
        this.tankId = tankId;
        this.waterLevel = waterLevel;
     }
-
    
      @Id @GeneratedValue(strategy=IDENTITY)
 
@@ -58,6 +65,16 @@ public class Devicedetails  implements java.io.Serializable {
     
     public void setRecordid(Integer recordid) {
         this.recordid = recordid;
+    }
+
+    
+    @Column(name="CurrentTankCapacity", unique=true, nullable=false)
+    public Double getCurrentTankCapacity() {
+        return this.currentTankCapacity;
+    }
+    
+    public void setCurrentTankCapacity(Double currentTankCapacity) {
+        this.currentTankCapacity = currentTankCapacity;
     }
 
     

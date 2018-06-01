@@ -5,11 +5,14 @@
  */
 package mobitechgrpid.mobitech.Dao;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import mobitechgrpid.mobitech.Controllers.Devicedetails;
+import mobitechgrpid.mobitech.Controllers.LastReceivedDetails;
 import org.hibernate.Session;
 import mobitechgrpid.mobitech.Services.NewHibernateUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -19,6 +22,7 @@ import org.hibernate.Query;
 import org.hibernate.Transaction;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.web.bind.annotation.ResponseBody;
+import mobitechgrpid.mobitech.Controllers.ServerController;
 /**
  *
  * @author danial
@@ -27,16 +31,17 @@ public class DataAccessObject {
     
     //Session session = NewHibernateUtil.getSessionFactory().openSession();
     
-    public static boolean adddevicedata(double waterLevel, Double signalStrength, String hwVersion, String tankId,String dateGeneratedOnDevice, String errorCode){
+    public static boolean adddevicedata( Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel,String DateSavedOnDb ){
         
         int recid = 0;
+        ServerController sc = new ServerController();
         Session session = NewHibernateUtil.getSessionFactory().openSession();
         Transaction tx = null;
         try{
             tx = session.beginTransaction();
             
-                                            //double waterLevel, Double signalStrength, String hwVersion, Date dateSavedOnDb, String tankId, Integer organizationId, String dateGeneratedOnDevice, String errorCode
-            Devicedetails dd  = new Devicedetails(  waterLevel,  signalStrength,  hwVersion, tankId,   dateGeneratedOnDevice,  errorCode);
+                                                 //Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel, String DateSavedOnDb                        
+            Devicedetails dd  = new Devicedetails(currentTankCapacity, dateGeneratedOnDevice, errorCode, hwVersion, signalStrength, tankId, waterLevel, sc.StringToDateConverter(DateSavedOnDb) );
             recid = (Integer) session.save(dd);
             tx.commit();
             
@@ -57,17 +62,45 @@ public class DataAccessObject {
         
     }
     
-    public static boolean addSMSProcessedData(double waterLevel,String tankID, Long lastReceivedId ){
-        
-         int recid = 0;
+    public static boolean addSMSProcessedData(double waterLevel,String tankID,double currentTankCapacity, String DateSavedOnDb  ){
+        ServerController sc = new ServerController();
+        int recid = 0;
         Session session = NewHibernateUtil.getSessionFactory().openSession();
         Transaction tx = null;
         try{
             tx = session.beginTransaction();
             
-                      // double waterLevel,String tankId,lastReceivedId                   
-            Devicedetails dd  = new Devicedetails(waterLevel,tankID, lastReceivedId );        //lastReceivedId - our lastrecord from africastalking 
+                      // double waterLevel,String tankId,currentTankCapacity                   
+            Devicedetails dd  = new Devicedetails(waterLevel,tankID,currentTankCapacity,sc.StringToDateConverter(DateSavedOnDb));      
             recid = (Integer) session.save(dd);
+            tx.commit();
+            
+        }catch (Exception ex)
+        {
+            System.out.println(ex.getMessage());
+            if (tx!=null)
+            {
+             tx.rollback();
+            }
+        }finally
+        {
+            session.close();
+        }
+        return recid>0;
+    }
+    //Long LastReceivedValueToAfricasTalking
+    
+        public static boolean save_LastReceivedId(long LastReceivedValueToAfricasTalking, String DateSavedOnDb ){
+        ServerController sc = new ServerController();
+         int recid = 0;
+        Session session = NewHibernateUtil.getSessionFactory().openSession();
+        Transaction tx = null;
+        try{
+            tx = session.beginTransaction();
+             System.out.println("This is saved on DB" +sc.StringToDateConverter(DateSavedOnDb));                 
+             LastReceivedDetails lrd  = new LastReceivedDetails(LastReceivedValueToAfricasTalking, sc.StringToDateConverter(DateSavedOnDb));     // Create Object 
+         
+            recid = (Integer) session.save(lrd);
             tx.commit();
             
         }catch (Exception ex)
@@ -117,10 +150,10 @@ public class DataAccessObject {
         
     }
     
-       public static List LastReceivedId  (){ 
+       public static List LastReceivedIdValue  (){ 
     
          Session session = NewHibernateUtil.getSessionFactory().openSession();
-         Query query = session.createQuery("SELECT lastReceivedId FROM Devicedetails dd ORDER BY dd.recordid DESC");  //HQL  
+         Query query = session.createQuery("SELECT lastReceivedValueToAfricasTalking FROM LastReceivedDetails dc ORDER BY dc.lastReceivedId DESC");  //HQL  
         /// SELECT recordid FROM mobiwaterDB.devicedetails ORDER BY recordid DESC LIMIT 1;      //SQL Works ok
          List results = query.setMaxResults(1).list();
          
@@ -130,27 +163,25 @@ public class DataAccessObject {
  
        }
  
-       public static double TankVolume  (String tankID){ 
+       public static double TankVolume  (String tankID, Double tankHeightDouble){ 
     
          Session session = NewHibernateUtil.getSessionFactory().openSession();
-         Query query = session.createQuery("SELECT tankHeight FROM Tankdetails dd WHERE dd.tankId = '"+tankID+"'");  //HQL  
+         //Query query = session.createQuery("SELECT waterLevel FROM devicedetails dd WHERE dd.tankId = '"+tankID+"'");  //HQL  
          Query query1 = session.createQuery("SELECT tankBaseArea FROM Tankdetails dd WHERE dd.tankId = '"+tankID+"'");  //HQL  
        
-         List tankHeightList = query.list();
+        // List tankHeightList = query.list();        //current tank height
          List tankBaseAreaList = query1.list();
         
-         String tankHeightString = tankHeightList.get(0).toString();
+         //String tankHeightString = tankHeightList.get(0).toString();
          String tankBaseAreaString = tankBaseAreaList.get(0).toString();
-    
-         double tankHeightDouble = Double.parseDouble( tankHeightString);
+         
+        // double tankHeightDouble = Double.parseDouble( tankHeightString);
          double tankBaseAreaDouble = Double.parseDouble( tankBaseAreaString);
          return (tankHeightDouble * tankBaseAreaDouble);
     
  
        }
-       
-    
-    
+      
     public static List DashboardQuery2 (){                  //return the whole database :)
         Session session = NewHibernateUtil.getSessionFactory().openSession();
         String hql = "FROM Devicedetails";
@@ -170,8 +201,8 @@ public class DataAccessObject {
         return results;
         
     }
-   public static List DashboardQuery4 (String tankID){                     //return last record of a given id   (REALTIME!!!!!!!!)
-    
+   //public static List DashboardQuery4 (String tankID){                     //return last record of a given id   (REALTIME!!!!!!!!)
+    public List DashboardQuery4 (String tankID){
     Session session = NewHibernateUtil.getSessionFactory().openSession();
     Calendar c = Calendar.getInstance();
     c.add(Calendar.HOUR, -24);         //parameterize query and give as an argument Date that is 7 days in past
@@ -181,17 +212,9 @@ public class DataAccessObject {
         session.createQuery("FROM Devicedetails dd WHERE dd.tankId = '"+tankID+"' AND dd.dateSavedOnDb > :param")
           .setParameter("param", d)
           .list();
-        // session.close();
-       return results;
-       
-       /*
-         Session session = NewHibernateUtil.getSessionFactory().openSession();
-         Query query = session.createQuery("from Devicedetails dd WHERE dd.tankId = '"+tankID+"' ORDER BY dd.recordid DESC");
-         List results = query.setMaxResults(1).list();
-         // session.close();
-           return results;
-           */
-       }
+    
+         return results ;
+   }   
     @ResponseBody
     public static List DashboardQuery5 (String tankID){                     //return last record of a given id   (last 1 week!!!!!!!!)
     
@@ -207,7 +230,7 @@ public class DataAccessObject {
         // session.close();
        return results;
      }
-        //@ResponseBody
+       
     public static List DashboardQuery6 (String tankID){                     //return   (last 1 MONTH!!!!!!!!)
     
     Session session = NewHibernateUtil.getSessionFactory().openSession();

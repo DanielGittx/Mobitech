@@ -68,32 +68,23 @@ public class DashboardController {
 
         Gson Gsonresults = new Gson();
           Gson gson = new Gson();
+          DataAccessObject dao = new DataAccessObject();
         // Tasks
         // Data points for the whole day (like 4 points)
         // Email 
         
         switch (waterLevelStatus) {
-            case 0: //Most Recent record
-             return DataAccessObject.DashboardQuery4(tankID);
-//                 JSONObject json = new JSONObject(DataAccessObject.DashboardQuery4(tankID)); //Converts MAP to JsonObject
-//              return json;
-            
-            case 1: //Last 1 week
+            case 0: // Today records
+             return dao.DashboardQuery4(tankID);
+            case 1: //Last 1 week records
                 return DataAccessObject.DashboardQuery5(tankID);
-                       
-                
-            case 2: //Last 1 month
-                //return DataAccessObject.DashboardQuery6(tankID);
-                                
-            case 3: // Last 1 Year
-                return DataAccessObject.DashboardQuery7(tankID);
-                
-            default:       //most recent record (realtime) 
-              //int res = (int)DataAccessObject.LastReceivedId().get(0);
-              
-                 //return DataAccessObject.TankVolume(tankID);
-                return DataAccessObject.DashboardQuery4(tankID);  //records for last 24 hours(default realtime)
-                //return DataAccessObject.LastReceivedId();         
+            case 2: //Last 1 month records
+                return DataAccessObject.DashboardQuery6(tankID);                 
+            case 3: //Last 1 year records
+                return DataAccessObject.DashboardQuery7(tankID);        
+            default:                
+                return dao.DashboardQuery4(tankID);  // Today records (default)
+                        
         }
 
     }

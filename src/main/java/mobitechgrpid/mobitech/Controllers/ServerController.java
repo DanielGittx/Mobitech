@@ -13,6 +13,13 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -44,26 +51,29 @@ public class ServerController{
     //public Connection conn = databaseOperations.getRemoteConnection();
     
 
-    @RequestMapping("/test")            //Endpoint - :8080/test?imei=124578&signalStrength=90&waterLevel=500
+    @RequestMapping("/test")            //Endpoint for BrckDevice
    // public DeviceDetails devdetails(
              public String devdetails(
-                                    @RequestParam(value="signalStrength") double signalStrength,
+                                    @RequestParam(value="SS") double signalStrength,
                                     @RequestParam(value="tankID") String tankID,
-                                    @RequestParam(value="waterLevel") double waterLevel,//dateGeneratedOnDevice
-                                    @RequestParam(value="errorCode") String errorCode,
-                                    @RequestParam(value="dateGeneratedOnDevice") String dateGeneratedOnDevice,
-                                    @RequestParam(value="HW_version") String HW_version) throws SQLException
+                                    @RequestParam(value="WL") double waterLevel,
+                                    @RequestParam(value="ER") String errorCode,
+                                    @RequestParam(value="DG") String dateGeneratedOnDevice,      //TODO - convert to DATE
+                                    @RequestParam(value="HW") String HW_version) throws SQLException
     {
                       /* ALGORITHM
                             1. Process data received
                             2. Convert to json file (deviceDetails.json) to enable saving to dynamoDB
                             3. Publishing to HTTP/HTTPs Endpoints for dashboard (Upande guys)
                             4. Find out how long this method takes to execute; should be optimized to facilitate many transactions concurrently
-                            5. 
-                     */
-             // Date dateSavedOnDb = new Date();            //Now
+                      */
+                                        
+            // Store records in the database --WE MUST HAVE CAPACITY (Register Device into DB) TO GET RECORDS IN DB
+        double currentTankCapacity = DataAccessObject.TankVolume(tankID, waterLevel);      //Get current tank capacity (Cubic Metres)
+        currentTankCapacity *= 1000; // Cubic metres to Litres
         
-       if (DataAccessObject.adddevicedata(waterLevel, signalStrength, HW_version, tankID,dateGeneratedOnDevice, errorCode))
+                
+       if (DataAccessObject.adddevicedata(currentTankCapacity, dateGeneratedOnDevice, errorCode,HW_version, signalStrength,  tankID,waterLevel, "BrckDevice"))   /// save DATE NOW for BrckDevice
                                           
         {
             return "Sucess : Device data added";
@@ -98,49 +108,37 @@ public class ServerController{
         // what you currently believe is the lastReceivedId. Specify 0 for the first
         // time you access the gateway, and the ID of the last message we sent you
         // on subsequent results
+        long lastReceivedId = 0;
+            if ( DataAccessObject.LastReceivedIdValue().get(0) != null) 
+                   lastReceivedId = (Long)DataAccessObject.LastReceivedIdValue().get(0) ;  
+                    System.out.println("retrieved lastReceivedId: " + lastReceivedId);
    
-        long _lastReceivedId = 0;
-        
-        System.out.println("We've just hit AFRICASTALKING API; Next is SMSData fetched from the API.......");
-        
-            if ( DataAccessObject.LastReceivedId().get(0) != null) 
-                 _lastReceivedId = (Long)DataAccessObject.LastReceivedId().get(0) ;  
-
-         long lastReceivedId = _lastReceivedId;
-          System.out.println("retrieved lastReceivedId: " + _lastReceivedId);
-              
-        
-        
             JSONArray results = null;
             JSONObject result = null;
-            boolean flag_lastRecordIn = false;
         // Here is a sample of how to fetch all messages using a while loop
         try {
 
             do {
-                results = gateway.fetchMessages(lastReceivedId);
+                results = gateway.fetchMessages(lastReceivedId);    // lastReceivedId retrieved from Database
                 for(int i = 0; i < results.length(); ++ i) {
                     result = results.getJSONObject(i);
                     
-                    System.out.println("From: " + result.getString("from"));
-                    System.out.println("To: " + result.getString("to"));
+                    //System.out.println("From: " + result.getString("from"));
+                    //System.out.println("To: " + result.getString("to"));
                     System.out.println("Message: " + result.getString("text"));
-                    System.out.println("Date: " + result.getString("date"));
-                    System.out.println("linkId: " + result.getString("linkId"));
-                    lastReceivedId = result.getLong("id");
-                    System.out.println("saved lastReceivedId: " + lastReceivedId);
+                    System.out.println("Print Date: " + result.getString("date"));
+                    //System.out.println("linkId: " + result.getString("linkId"));
+                    lastReceivedId = result.getLong("id");          // Most recent lastReceivedId to be saved in Database
+                    //System.out.println("saved lastReceivedId: " + lastReceivedId);
                     
                     try {
-                    ServController.processing(result, lastReceivedId );               //Save lastReceivedId
+                         ServController.processing(result, lastReceivedId );               //Save lastReceivedId
                     }catch (Exception ex)
                     {
-                        System.out.println("Processing function exception -> " +ex );
+                       // System.out.println("Processing function exception -> " +ex );
                     }
       
                 }
-                  // Error pops - Exception on fetch 
-                
-                  // flag_lastRecordIn = true;
                 
             } 
             
@@ -148,83 +146,35 @@ public class ServerController{
         } catch (Exception e) {
             System.out.println("Caught an Exception when tring to fetch SMS from Africastalking: " + e.getMessage());
         }
-        
-        /*
-           if(flag_lastRecordIn)
-           {
-            if(result!=null){
-                try {
-          
-                   if (sCodeProc.SMSMessageProcessing(result.getString("text")) >= 0 );    // water level to store in dB
-                    {
-                       
-                       double level = sCodeProc.SMSMessageProcessing(result.getString("text"));
-                       String tankID = result.getString("from");
-                       tankID = tankID.substring(1,13);         //+254792714708 ignore the + for easy query of tankID
-                       //databaseOperations.insertSMSProcessedDataToDatabase(conn, level, tankID);  //double level, string devicephonenumber
-                       //Date dateSavedOnDb = new Date();            //Now
-                       if (level >= 0 || (sCodeProc.SMSMessageProcessing(result.getString("text")) != 1 ))  {        //no negtives in DB --- TODO:- Find out how -ve could have come about in database
-                          DataAccessObject.addSMSProcessedData(level, tankID, lastReceivedId);
-                           System.out.println("lastReceivedId : " +lastReceivedId);  
-                          
-                       }
-                       //System.out.println("Processed sms stored in DBase");
-                       //return "Message Identifier missing";
-                        //store in db here
-                    }
-                   if (sCodeProc.SMSMessageProcessing(result.getString("text")) ==  -1);           //Debugging return value
-                        //System.out.println("Null Message Type -> ");
-                        //return "Message Identifier missing on this SMS -> "+result.getString("text");
-                        
-                   if (sCodeProc.SMSMessageProcessing(result.getString("text")) ==  -2);
-                        //System.out.println(" Processing... -> "+result.getString("text"));
-                        //return "Processing... -> "+result.getString("text");
-                          
-                    }catch (JSONException ex)
-                    {
-                           return "SQL or JSON Exception -fetch- "+ex;
-                    }
-                   }
             
-                   flag_lastRecordIn=false;
-                   
-                    if ( DataAccessObject.LastReceivedId().get(0) != null){
-                         lastReceivedId = (Long)DataAccessObject.LastReceivedId().get(0) ;
-                         System.out.println("lastReceivedId 1 : " +lastReceivedId);
-                     }
-                     else{       //no need to evaluate this really!
-                         lastReceivedId = lastReceivedId;
-                         System.out.println("lastReceivedId 2 : " +lastReceivedId);
-
-                     }
-                   
-               
-           }
-        */
-    
     // NOTE: Be sure to save lastReceivedId here for next time
        return "Processed sms stored in DBase";
     }
     
- public void processing (JSONObject result, long lastReceivedId )  {
+ public void processing (JSONObject result, long LastReceivedValueToAfricasTalking )  {
     shortCodeProcessing sCodeProc = new shortCodeProcessing();
     if  (result != null)
         
      try {
           
 	   if (sCodeProc.SMSMessageProcessing(result.getString("text")) >= 0 );    // water level to store in dB
-		{
-		   
-		   double level = sCodeProc.SMSMessageProcessing(result.getString("text"));
+		{   
+		   double level = sCodeProc.SMSMessageProcessing(result.getString("text"));       //TODO:- Cleaner way of doing this!
 		   String tankID = result.getString("from");
-		   tankID = tankID.substring(1,13);         //+254792714708 ignore the + for easy query of tankID
+		   tankID = tankID.substring(1,13);         //+254792714708 ignore the + for easy query of tankID on Database
 		   //databaseOperations.insertSMSProcessedDataToDatabase(conn, level, tankID);  //double level, string devicephonenumber
 		   //Date dateSavedOnDb = new Date();            //Now
-		   if (level < 0 || (sCodeProc.SMSMessageProcessing(result.getString("text")) < 0 ) )  {        //no negtives in DB --- TODO:- Find out how -ve could have come about in database                   
-			   System.out.println("No negatives in DB");      
+		   if (level < 0 || (sCodeProc.SMSMessageProcessing(result.getString("text")) < 0 ) )  {        //no negtives in DB                    
+			   //System.out.println("No negatives in DB");  
+                           //Just chill
 		   }else{
-				DataAccessObject.addSMSProcessedData(level, tankID, lastReceivedId);
-		   }
+                            // Store records (level etc) in the database
+                            double currentTankCapacity = DataAccessObject.TankVolume(tankID, level);      //Get current tank capacity (Cubic Metres)
+                            currentTankCapacity *= 1000; // Cubic metres to Litres
+                            DataAccessObject.addSMSProcessedData(level, tankID,currentTankCapacity,result.getString("date") );   // save level, capacity
+                            DataAccessObject.save_LastReceivedId(LastReceivedValueToAfricasTalking,result.getString("date") );   // save updated lastReceivedId on LastReceived Table
+            
+                   }
 
 		}
 			  
@@ -234,6 +184,20 @@ public class ServerController{
                         System.out.println("SQL or JSON Exception -fetch- "+ex );
 		}
     }
+ 
+  public Date StringToDateConverter (String dateSavedOnDb)
+    {
+        if (dateSavedOnDb.equals("BrckDevice")){
+           Date parsed_date_embedded = new Date();            //Now
+           return parsed_date_embedded;                       //Brck Device
+        }
+
+        Instant instant = Instant.parse( dateSavedOnDb );    // `Instant` is always in UTC
+        Date parsed_date = Date.from( instant );             // Pass an `Instant` to the `from` method.      
+        System.out.println("Parsed Date -> " +parsed_date); 
+        return parsed_date; 
+ 
+     }
       
    public static void printSQLException(SQLException ex) {
     for (Throwable e : ex) {
