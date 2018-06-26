@@ -73,7 +73,7 @@ public class ServerController{
         currentTankCapacity *= 1000; // Cubic metres to Litres
         
                 
-       if (DataAccessObject.adddevicedata(currentTankCapacity, dateGeneratedOnDevice, errorCode,HW_version, signalStrength,  tankID,waterLevel, "BrckDevice"))   /// save DATE NOW for BrckDevice
+       if (DataAccessObject.adddevicedata(currentTankCapacity, dateGeneratedOnDevice, errorCode,HW_version, signalStrength,  tankID,waterLevel, "DateSavedOnDbNOW", 11111111))   /// save DATE NOW for BrckDevice
                                           
         {
             return "Sucess : Device data added";
@@ -109,9 +109,10 @@ public class ServerController{
         // time you access the gateway, and the ID of the last message we sent you
         // on subsequent results
         long lastReceivedId = 0;
-            if ( DataAccessObject.LastReceivedIdValue().get(0) != null) 
+            if ( DataAccessObject.LastReceivedIdValue().get(0) != null) {
                    lastReceivedId = (Long)DataAccessObject.LastReceivedIdValue().get(0) ;  
                     System.out.println("retrieved lastReceivedId: " + lastReceivedId);
+            }
    
             JSONArray results = null;
             JSONObject result = null;
@@ -171,7 +172,7 @@ public class ServerController{
                             // Store records (level etc) in the database
                             double currentTankCapacity = DataAccessObject.TankVolume(tankID, level);      //Get current tank capacity (Cubic Metres)
                             currentTankCapacity *= 1000; // Cubic metres to Litres
-                            DataAccessObject.addSMSProcessedData(level, tankID,currentTankCapacity,result.getString("date") );   // save level, capacity
+                            DataAccessObject.addSMSProcessedData(level, tankID,currentTankCapacity,result.getString("date"),LastReceivedValueToAfricasTalking );   // save level, capacity
                             DataAccessObject.save_LastReceivedId(LastReceivedValueToAfricasTalking,result.getString("date") );   // save updated lastReceivedId on LastReceived Table
             
                    }
@@ -187,7 +188,7 @@ public class ServerController{
  
   public Date StringToDateConverter (String dateSavedOnDb)
     {
-        if (dateSavedOnDb.equals("BrckDevice")){
+        if (dateSavedOnDb.equals("DateSavedOnDbNOW")){        //Brck Device
            Date parsed_date_embedded = new Date();            //Now
            return parsed_date_embedded;                       //Brck Device
         }

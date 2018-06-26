@@ -1,3 +1,4 @@
+mobitechgrpid\mobitech\Dao\DataAccessObject.class
 mobitechgrpid\mobitech\Controllers\ServerController.class
 mobitechgrpid\mobitech\Services\MobilePaymentB2CRecipient.class
 mobitechgrpid\mobitech\Services\NewHibernateUtil.class
@@ -9,6 +10,7 @@ mobitechgrpid\mobitech\Controllers\DashboardController.class
 mobitechgrpid\mobitech\Controllers\ServerController$ServletConfig.class
 mobitechgrpid\mobitech\Services\DeviceMessageConstants.class
 mobitechgrpid\mobitech\Services\multipliers.class
+mobitechgrpid\mobitech\Controllers\LastReceivedDetails.class
 mobitechgrpid\mobitech\Services\shortCodeProcessing.class
 mobitechgrpid\mobitech\Controllers\MobitechMain.class
 mobitechgrpid\mobitech\Services\CallAPIProxy.class

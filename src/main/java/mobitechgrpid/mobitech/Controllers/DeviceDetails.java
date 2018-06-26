@@ -37,15 +37,16 @@ public class Devicedetails  implements java.io.Serializable {
     }
 
 	                    //  waterLevel,        tankID,       currentTankCapacity
-    public Devicedetails(double waterLevel, String tankId,Double currentTankCapacity, Date DateSavedOnDb) {  //SMS
+    public Devicedetails(double waterLevel, String tankId,Double currentTankCapacity, Date DateSavedOnDb, long _lastReceivedId) {  //SMS
         this.currentTankCapacity = currentTankCapacity;
         this.waterLevel = waterLevel;
         this.tankId = tankId;
         this.dateSavedOnDb = DateSavedOnDb;
+        this.lastReceivedId = _lastReceivedId;
    
     }
                            
-    public Devicedetails(Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel, Date DateSavedOnDb) {
+    public Devicedetails(Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel, Date DateSavedOnDb, long _lastReceivedId) {
        this.currentTankCapacity = currentTankCapacity;
        this.dateGeneratedOnDevice = dateGeneratedOnDevice;
        this.errorCode = errorCode;
@@ -53,6 +54,8 @@ public class Devicedetails  implements java.io.Serializable {
        this.signalStrength = signalStrength;
        this.tankId = tankId;
        this.waterLevel = waterLevel;
+       this.dateSavedOnDb = DateSavedOnDb;
+       this.lastReceivedId = _lastReceivedId;
     }
    
      @Id @GeneratedValue(strategy=IDENTITY)

@@ -31,7 +31,7 @@ public class DataAccessObject {
     
     //Session session = NewHibernateUtil.getSessionFactory().openSession();
     
-    public static boolean adddevicedata( Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel,String DateSavedOnDb ){
+    public static boolean adddevicedata( Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel,String DateSavedOnDb, long LastReceivedValueToAfricasTalking ){
         
         int recid = 0;
         ServerController sc = new ServerController();
@@ -41,7 +41,7 @@ public class DataAccessObject {
             tx = session.beginTransaction();
             
                                                  //Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel, String DateSavedOnDb                        
-            Devicedetails dd  = new Devicedetails(currentTankCapacity, dateGeneratedOnDevice, errorCode, hwVersion, signalStrength, tankId, waterLevel, sc.StringToDateConverter(DateSavedOnDb) );
+            Devicedetails dd  = new Devicedetails(currentTankCapacity, dateGeneratedOnDevice, errorCode, hwVersion, signalStrength, tankId, waterLevel, sc.StringToDateConverter(DateSavedOnDb), LastReceivedValueToAfricasTalking );
             recid = (Integer) session.save(dd);
             tx.commit();
             
@@ -62,7 +62,7 @@ public class DataAccessObject {
         
     }
     
-    public static boolean addSMSProcessedData(double waterLevel,String tankID,double currentTankCapacity, String DateSavedOnDb  ){
+    public static boolean addSMSProcessedData(double waterLevel,String tankID,double currentTankCapacity, String DateSavedOnDb, long LastReceivedValueToAfricasTalking ){
         ServerController sc = new ServerController();
         int recid = 0;
         Session session = NewHibernateUtil.getSessionFactory().openSession();
@@ -71,7 +71,7 @@ public class DataAccessObject {
             tx = session.beginTransaction();
             
                       // double waterLevel,String tankId,currentTankCapacity                   
-            Devicedetails dd  = new Devicedetails(waterLevel,tankID,currentTankCapacity,sc.StringToDateConverter(DateSavedOnDb));      
+            Devicedetails dd  = new Devicedetails(waterLevel,tankID,currentTankCapacity,sc.StringToDateConverter(DateSavedOnDb), LastReceivedValueToAfricasTalking);      
             recid = (Integer) session.save(dd);
             tx.commit();
             

@@ -32,7 +32,7 @@ public double SMSMessageProcessing (String SMSmessage){             //Return liq
         String level = null;
         String date = null;
         String time=null;
-        
+               
         SMSmessage_substring = SMSmessage.substring(0, 15);
         
     try{
@@ -40,19 +40,21 @@ public double SMSMessageProcessing (String SMSmessage){             //Return liq
        if (SMSmessage_substring.equals(SMSmessageIdentifier)) {
 
            
-        if ( SMSmessage.length() > 100 && SMSmessage.length() < 110)              //Sms message from Killah device
-         {
+       if ( SMSmessage.length() > 100 && SMSmessage.length() < 110)              //Sms message from DGTS device
+        {
             Double currentTankCapacity = 0.00;
             String[] SMSmessageWithoutKeyword = SMSmessage.split(" ");
 	    String[] tokens = SMSmessageWithoutKeyword[1].split(":");
             if (tokens[1].equals("ID")) { 
                   double water_level = Double.parseDouble(tokens[11]);  
                   double signal_strength = Double.parseDouble(tokens[9]);
-                  if (water_level >= 0) //+VE Levels
-                                            //Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel
-                      DataAccessObject.adddevicedata(currentTankCapacity,  "dateGeneratedOnDevice", "errorCode", "hwVersion",signal_strength, "tankID", water_level, "DateSavedOnDbNOW");      //Todo SMS
-                  
-                  return -1;
+                  if (water_level >= 0) { //+VE Levels
+                                           
+                      //currentTankCapacity = DataAccessObject.TankVolume(tankID, water_level);      //Get current tank capacity (Cubic Metres)
+                      //currentTankCapacity *= 1000; // Cubic metres to Litres
+                      DataAccessObject.adddevicedata(currentTankCapacity,  "dateGeneratedOnDevice", "errorCode", "hwVersion",signal_strength, "tankID", water_level, "DateSavedOnDbNOW", 11111111);      //Todo SMS
+                      return -1;
+                  }
            }
            
         }    

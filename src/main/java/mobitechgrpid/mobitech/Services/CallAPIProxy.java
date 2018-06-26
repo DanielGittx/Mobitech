@@ -21,7 +21,7 @@ public class CallAPIProxy {
     public CallAPIProxy(int seconds) {
         timer = new Timer();
         // timer.schedule(new APICallerTask(), seconds * 1000);
-        timer.scheduleAtFixedRate(new APICallerTask(), 1800000, 1800000);        //fetch every 30 minutes
+        timer.scheduleAtFixedRate(new APICallerTask(), 30000, 30000);        //fetch every 30 minutes
 
     }
 

@@ -88,6 +88,19 @@ public class DashboardController {
         }
 
     }
+    
+    @RequestMapping(value = "/mobidashboard", method = RequestMethod.GET , produces = "application/json")
+    public @ResponseBody List viewTable_Upande(
+           @RequestParam(value = "tankID") String tankID) throws SQLException, JSONException {
+
+        Gson Gsonresults = new Gson();
+        Gson gson = new Gson();
+        DataAccessObject dao = new DataAccessObject();
+        // Tasks
+        // Data points for today (like 4 points)
+        // Email 
+        return dao.DashboardQuery4(tankID) ;  // Today records (default)
+     }
         
 }    
   

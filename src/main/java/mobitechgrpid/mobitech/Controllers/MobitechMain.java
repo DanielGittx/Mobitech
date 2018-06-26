@@ -42,7 +42,7 @@ public class MobitechMain {
         SpringApplication.run(MobitechMain.class, args);
    
         System.out.println("Service that refreshes Africas talking SMS FETCHING API (every 30 minutes) ");
-        CallAPIProxy callapi = new CallAPIProxy(1800000);    ///30 MINUTES REFRESH
+        CallAPIProxy callapi = new CallAPIProxy(30000);    ///30 seconds
         System.out.println("Service started...");
         
        
