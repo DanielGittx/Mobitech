@@ -20,4 +20,7 @@ String hardwareVersion = "HVERSION";
 String deviceError = "ERROR";
 String batteryVoltage = "VBATT";
 
+public static final int ATMOSPHERIC_SENSOR = 0;
+public static final int ULTRASONIC_SENSOR = 1;
+
 }

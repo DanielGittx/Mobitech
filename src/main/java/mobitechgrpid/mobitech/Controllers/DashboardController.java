@@ -38,7 +38,6 @@ import org.hibernate.Transaction;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 /**
  *
@@ -49,7 +48,6 @@ public class DashboardController {
 
     //dataToDb databaseOps = new dataToDb();
     //public Connection conn = databaseOps.getRemoteConnection();
-
     /**
      *
      * @param waterLevelStatus
@@ -58,7 +56,6 @@ public class DashboardController {
      * @throws SQLException
      * @throws JSONException
      */
-
     @RequestMapping(value = "/dashboard")
     @ResponseBody
     public List viewTable(
@@ -67,31 +64,32 @@ public class DashboardController {
             @RequestParam(value = "tankID") String tankID) throws SQLException, JSONException {
 
         Gson Gsonresults = new Gson();
-          Gson gson = new Gson();
-          DataAccessObject dao = new DataAccessObject();
+        Gson gson = new Gson();
+        DataAccessObject dao = new DataAccessObject();
         // Tasks
         // Data points for the whole day (like 4 points)
         // Email 
-        
+
         switch (waterLevelStatus) {
             case 0: // Today records
-             return dao.DashboardQuery4(tankID);
+                return dao.DashboardQuery4(tankID);
             case 1: //Last 1 week records
                 return DataAccessObject.DashboardQuery5(tankID);
             case 2: //Last 1 month records
-                return DataAccessObject.DashboardQuery6(tankID);                 
+                return DataAccessObject.DashboardQuery6(tankID);
             case 3: //Last 1 year records
-                return DataAccessObject.DashboardQuery7(tankID);        
-            default:                
+                return DataAccessObject.DashboardQuery7(tankID);
+            default:
                 return dao.DashboardQuery4(tankID);  // Today records (default)
-                        
+
         }
 
     }
-    
-    @RequestMapping(value = "/mobidashboard", method = RequestMethod.GET , produces = "application/json")
-    public @ResponseBody List viewTable_Upande(
-           @RequestParam(value = "tankID") String tankID) throws SQLException, JSONException {
+
+    @RequestMapping(value = "/mobidashboard", method = RequestMethod.GET, produces = "application/json")
+    public @ResponseBody
+    List viewTable_Upande(
+            @RequestParam(value = "tankID") String tankID) throws SQLException, JSONException {
 
         Gson Gsonresults = new Gson();
         Gson gson = new Gson();
@@ -99,8 +97,7 @@ public class DashboardController {
         // Tasks
         // Data points for today (like 4 points)
         // Email 
-        return dao.DashboardQuery4(tankID) ;  // Today records (default)
-     }
-        
-}    
-  
+        return dao.DashboardQuery4(tankID);  // Today records (default)
+    }
+
+}

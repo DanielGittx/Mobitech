@@ -35,6 +35,7 @@ public class Tankdetails  implements java.io.Serializable {
      private String tankLocation;
      private double tankLow;
      private String tankName;
+     private Integer typeOfSensor;
 
     public Tankdetails() {
     }
@@ -128,7 +129,19 @@ public class Tankdetails  implements java.io.Serializable {
     public void setTankCapacity(Double tankCapacity) {
         this.tankCapacity = tankCapacity;
     }
+    
+    //typeOfSensor
 
+    @Column(name="typeOfSensor")
+    public Integer getTypeOfSensor() {
+        return this.typeOfSensor;
+    }
+    
+    public void setTypeOfSensor(Integer typeOfSensor) {
+        this.typeOfSensor = typeOfSensor;
+    }
+    
+    
     
     @Column(name="tankDescription", length=65535)
     public String getTankDescription() {
@@ -208,8 +221,6 @@ public class Tankdetails  implements java.io.Serializable {
     public void setTankName(String tankName) {
         this.tankName = tankName;
     }
-
-
 
 
 }

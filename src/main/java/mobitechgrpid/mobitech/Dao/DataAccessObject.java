@@ -7,15 +7,18 @@ package mobitechgrpid.mobitech.Dao;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import mobitechgrpid.mobitech.Controllers.Devicedetails;
 import mobitechgrpid.mobitech.Controllers.LastReceivedDetails;
 import org.hibernate.Session;
 import mobitechgrpid.mobitech.Services.NewHibernateUtil;
-import org.apache.commons.lang3.StringUtils;
+import mobitechgrpid.mobitech.Services.multipliers;
+import mobitechgrpid.mobitech.Services.DeviceMessageConstants;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -23,11 +26,14 @@ import org.hibernate.Transaction;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.web.bind.annotation.ResponseBody;
 import mobitechgrpid.mobitech.Controllers.ServerController;
+import mobitechgrpid.mobitech.Controllers.Tankdetails;
+import org.hibernate.SQLQuery;
+import mobitechgrpid.mobitech.Controllers.Tankdetails;
 /**
  *
  * @author danial
  */
-public class DataAccessObject {
+public class DataAccessObject implements DeviceMessageConstants {
     
     //Session session = NewHibernateUtil.getSessionFactory().openSession();
     
@@ -97,7 +103,7 @@ public class DataAccessObject {
         Transaction tx = null;
         try{
             tx = session.beginTransaction();
-             System.out.println("This is saved on DB" +sc.StringToDateConverter(DateSavedOnDb));                 
+             //System.out.println("This is saved on DB" +sc.StringToDateConverter(DateSavedOnDb));                 
              LastReceivedDetails lrd  = new LastReceivedDetails(LastReceivedValueToAfricasTalking, sc.StringToDateConverter(DateSavedOnDb));     // Create Object 
          
             recid = (Integer) session.save(lrd);
@@ -162,8 +168,15 @@ public class DataAccessObject {
         return results;
  
        }
- 
-       public static double TankVolume  (String tankID, Double tankHeightDouble){ 
+       
+       /*
+          Function - public static double TankVolume()
+          Input Parameters - String tankID, Double water_level
+          Comments - Ensure that water_level value passed is apprpriately processed 
+                     i.e ultrasonic sensor or atmospheric pressure sensor
+       
+       */
+        public static double TankVolume  (String tankID, Double _waterlevel){ 
     
          Session session = NewHibernateUtil.getSessionFactory().openSession();
          //Query query = session.createQuery("SELECT waterLevel FROM devicedetails dd WHERE dd.tankId = '"+tankID+"'");  //HQL  
@@ -177,10 +190,57 @@ public class DataAccessObject {
          
         // double tankHeightDouble = Double.parseDouble( tankHeightString);
          double tankBaseAreaDouble = Double.parseDouble( tankBaseAreaString);
-         return (tankHeightDouble * tankBaseAreaDouble);
-    
- 
-       }
+         return (_waterlevel * tankBaseAreaDouble * 1000);             //litres
+    }
+        
+        
+        public static double calculateCapacity(String tankID, double _waterlevel) {
+
+        Session session = NewHibernateUtil.getSessionFactory().openSession();
+        Query query1 = session.createQuery("SELECT COALESCE (typeOfSensor,0) FROM Tankdetails dd WHERE dd.tankId = '" + tankID + "'");  //HQL  
+        Query query2 = session.createQuery("SELECT tankHeight FROM Tankdetails dd WHERE dd.tankId = '" + tankID + "'");
+        List typeofSensor = query1.list(); //
+        List tankHeight = query2.list(); //
+        
+        int sensorType = Integer.parseInt(typeofSensor.get(0).toString());
+        double fullTankHeight = Double.parseDouble(tankHeight.get(0).toString());
+        
+
+        
+    /*    
+        //System.out.println("returnQuery");
+        System.out.println(typeofSensor);
+        List<Tankdetails> tankdetailsList=null;
+        int sensorType =0;
+         double fullTankHeight = 0.0;
+      
+        
+        //process the Results
+	for(Tankdetails tkd:tankdetailsList){
+		System.out.println("Object---->"+tkd);
+		//get all childs of each parent
+			
+			System.out.println("Type of sensor--->"+tkd.getTypeOfSensor());
+                        System.out.println("Tank Height--->"+tkd.getTankHeight());
+                        sensorType = tkd.getTypeOfSensor();
+                        fullTankHeight = tkd.getTankHeight();
+        }
+       */
+
+        double processed_height = 0;
+        processed_height = fullTankHeight - _waterlevel;
+
+        switch (sensorType) {
+            case 0:         //Transducer
+                return DataAccessObject.TankVolume(tankID, _waterlevel);          //capacity litres for transducer
+            case 1:         //Ultrasonic
+                return DataAccessObject.TankVolume(tankID, processed_height);          //capacity litres for transducer
+            default:
+                return DataAccessObject.TankVolume(tankID, _waterlevel);      //capacity litres for transducer
+        }
+
+    }
+        
       
     public static List DashboardQuery2 (){                  //return the whole database :)
         Session session = NewHibernateUtil.getSessionFactory().openSession();

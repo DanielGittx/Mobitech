@@ -21,7 +21,7 @@ import org.json.*;
 
 public class shortCodeProcessing implements DeviceMessageConstants{
    
-public double SMSMessageProcessing (String SMSmessage){             //Return liquid level: dont care normal, alarm , recover
+public double SMSMessageProcessing (String SMSmessage, String tankID){             //Return liquid level: dont care normal, alarm , recover
 
         String messageType = null;
         String SMSmessageReadyForParsing = null;
@@ -52,6 +52,8 @@ public double SMSMessageProcessing (String SMSmessage){             //Return liq
                                            
                       //currentTankCapacity = DataAccessObject.TankVolume(tankID, water_level);      //Get current tank capacity (Cubic Metres)
                       //currentTankCapacity *= 1000; // Cubic metres to Litres
+                      currentTankCapacity = DataAccessObject.calculateCapacity(tankID, water_level);
+                      
                       DataAccessObject.adddevicedata(currentTankCapacity,  "dateGeneratedOnDevice", "errorCode", "hwVersion",signal_strength, "tankID", water_level, "DateSavedOnDbNOW", 11111111);      //Todo SMS
                       return -1;
                   }
