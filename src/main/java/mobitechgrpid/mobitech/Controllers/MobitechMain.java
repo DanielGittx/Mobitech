@@ -7,7 +7,7 @@
 
 /**
  *
- * @author danial
+ * @author danial 
  */
 package mobitechgrpid.mobitech.Controllers;
 
@@ -44,11 +44,7 @@ public class MobitechMain {
         System.out.println("Service that refreshes Africas talking SMS FETCHING API (every 30 minutes) ");
         CallAPIProxy callapi = new CallAPIProxy(30000);    ///30 seconds
         System.out.println("Service started...");
-        
-       
-               
-        
-        
+  
     }
         
         

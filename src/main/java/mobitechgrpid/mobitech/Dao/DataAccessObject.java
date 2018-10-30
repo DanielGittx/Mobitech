@@ -37,7 +37,7 @@ public class DataAccessObject implements DeviceMessageConstants {
     
     //Session session = NewHibernateUtil.getSessionFactory().openSession();
     
-    public static boolean adddevicedata( Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel,String DateSavedOnDb, long LastReceivedValueToAfricasTalking ){
+    public static boolean adddevicedata( Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel,String DateSavedOnDb, long LastReceivedValueToAfricasTalking ,int batteryVoltage){
         
         int recid = 0;
         ServerController sc = new ServerController();
@@ -47,7 +47,7 @@ public class DataAccessObject implements DeviceMessageConstants {
             tx = session.beginTransaction();
             
                                                  //Double currentTankCapacity, String dateGeneratedOnDevice, String errorCode, String hwVersion, Double signalStrength, String tankId, double waterLevel, String DateSavedOnDb                        
-            Devicedetails dd  = new Devicedetails(currentTankCapacity, dateGeneratedOnDevice, errorCode, hwVersion, signalStrength, tankId, waterLevel, sc.StringToDateConverter(DateSavedOnDb), LastReceivedValueToAfricasTalking );
+            Devicedetails dd  = new Devicedetails(currentTankCapacity, dateGeneratedOnDevice, errorCode, hwVersion, signalStrength, tankId, waterLevel, sc.StringToDateConverter(DateSavedOnDb), LastReceivedValueToAfricasTalking, batteryVoltage );
             recid = (Integer) session.save(dd);
             tx.commit();
             
@@ -194,49 +194,33 @@ public class DataAccessObject implements DeviceMessageConstants {
     }
         
         
-        public static double calculateCapacity(String tankID, double _waterlevel) {
+    public static double[] calculateCapacity(String tankID, double _waterlevel) {
 
         Session session = NewHibernateUtil.getSessionFactory().openSession();
-        Query query1 = session.createQuery("SELECT COALESCE (typeOfSensor,0) FROM Tankdetails dd WHERE dd.tankId = '" + tankID + "'");  //HQL  
+        Query query1 = session.createQuery("SELECT COALESCE (typeOfSensor,0) FROM Tankdetails dd WHERE dd.tankId = '" + tankID + "'");  //HQL - replace NULL with 0
         Query query2 = session.createQuery("SELECT tankHeight FROM Tankdetails dd WHERE dd.tankId = '" + tankID + "'");
         List typeofSensor = query1.list(); //
         List tankHeight = query2.list(); //
         
         int sensorType = Integer.parseInt(typeofSensor.get(0).toString());
         double fullTankHeight = Double.parseDouble(tankHeight.get(0).toString());
-        
-
-        
-    /*    
-        //System.out.println("returnQuery");
-        System.out.println(typeofSensor);
-        List<Tankdetails> tankdetailsList=null;
-        int sensorType =0;
-         double fullTankHeight = 0.0;
-      
-        
-        //process the Results
-	for(Tankdetails tkd:tankdetailsList){
-		System.out.println("Object---->"+tkd);
-		//get all childs of each parent
-			
-			System.out.println("Type of sensor--->"+tkd.getTypeOfSensor());
-                        System.out.println("Tank Height--->"+tkd.getTankHeight());
-                        sensorType = tkd.getTypeOfSensor();
-                        fullTankHeight = tkd.getTankHeight();
-        }
-       */
-
         double processed_height = 0;
-        processed_height = fullTankHeight - _waterlevel;
+        double calculateCapacityResults [] ={0,0};         //0 - Capacity ; 1 - water level 
+        processed_height = fullTankHeight - (_waterlevel/100);
 
         switch (sensorType) {
             case 0:         //Transducer
-                return DataAccessObject.TankVolume(tankID, _waterlevel);          //capacity litres for transducer
+                calculateCapacityResults[0] = DataAccessObject.TankVolume(tankID, _waterlevel);          //capacity litres for transducer
+                calculateCapacityResults[1] = _waterlevel;
+                return calculateCapacityResults;
             case 1:         //Ultrasonic
-                return DataAccessObject.TankVolume(tankID, processed_height);          //capacity litres for transducer
+                calculateCapacityResults[0] = DataAccessObject.TankVolume(tankID, processed_height);          //capacity litres for transducer
+                calculateCapacityResults[1] = processed_height;
+                return calculateCapacityResults;
             default:
-                return DataAccessObject.TankVolume(tankID, _waterlevel);      //capacity litres for transducer
+                calculateCapacityResults[0] = DataAccessObject.TankVolume(tankID, _waterlevel);          //capacity litres for transducer
+                calculateCapacityResults[1] = _waterlevel;
+                return calculateCapacityResults;
         }
 
     }

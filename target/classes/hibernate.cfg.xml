@@ -44,7 +44,7 @@ Contributor(s):
     <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
     <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/mobiwaterDB?autoReconnect=true&amp;useSSL=false</property>
     <property name="hibernate.connection.username">root</property>
-    <property name="hibernate.connection.password"></property>
+    <property name="hibernate.connection.password">mobimobi1234*#</property>
     <mapping package="mobitechgrpid.mobitech.Controllers"/>
     <mapping class="mobitechgrpid.mobitech.Controllers.Devicedetails"/>
     <mapping class="mobitechgrpid.mobitech.Controllers.Tankdetails"/>

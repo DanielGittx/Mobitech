@@ -42,7 +42,7 @@ public double SMSMessageProcessing (String SMSmessage, String tankID){          
            
        if ( SMSmessage.length() > 100 && SMSmessage.length() < 110)              //Sms message from DGTS device
         {
-            Double currentTankCapacity = 0.00;
+            double []currentTankCapacity = {0.00,0.00};
             String[] SMSmessageWithoutKeyword = SMSmessage.split(" ");
 	    String[] tokens = SMSmessageWithoutKeyword[1].split(":");
             if (tokens[1].equals("ID")) { 
@@ -54,7 +54,7 @@ public double SMSMessageProcessing (String SMSmessage, String tankID){          
                       //currentTankCapacity *= 1000; // Cubic metres to Litres
                       currentTankCapacity = DataAccessObject.calculateCapacity(tankID, water_level);
                       
-                      DataAccessObject.adddevicedata(currentTankCapacity,  "dateGeneratedOnDevice", "errorCode", "hwVersion",signal_strength, "tankID", water_level, "DateSavedOnDbNOW", 11111111);      //Todo SMS
+                      DataAccessObject.adddevicedata(currentTankCapacity[0],  "dateGeneratedOnDevice", "errorCode", "hwVersion",signal_strength, "tankID", currentTankCapacity[1], "DateSavedOnDbNOW", 11111111, 0xffff);      //Todo SMS
                       return -1;
                   }
            }

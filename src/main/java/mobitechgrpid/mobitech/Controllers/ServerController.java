@@ -57,15 +57,17 @@ public class ServerController {
             @RequestParam(value = "WL") double waterLevel,
             @RequestParam(value = "ER") String errorCode,
             @RequestParam(value = "DG") String dateGeneratedOnDevice, //TODO - convert to DATE
+            @RequestParam(value = "VB") int batteryVoltage, //Battery Voltage
             @RequestParam(value = "HW") String HW_version) throws SQLException {
 
         // Store records in the database --WE MUST HAVE CAPACITY (Register Device into DB) TO GET RECORDS IN DB
         //double currentTankCapacity = DataAccessObject.TankVolume(tankID, waterLevel);      //Get current tank capacity (Cubic Metres)
         //currentTankCapacity *= 1000; // Cubic metres to Litres
-        
-        double currentTankCapacity = DataAccessObject.calculateCapacity(tankID, waterLevel);
+        double [] currentTankCapacity = {0,0};       
+          
+        currentTankCapacity = DataAccessObject.calculateCapacity(tankID, waterLevel);
 
-        if (DataAccessObject.adddevicedata(currentTankCapacity, dateGeneratedOnDevice, errorCode, HW_version, signalStrength, tankID, waterLevel, "DateSavedOnDbNOW", 11111111)) /// save DATE NOW for BrckDevice
+        if (DataAccessObject.adddevicedata(currentTankCapacity[0], dateGeneratedOnDevice, errorCode, HW_version, signalStrength, tankID, currentTankCapacity[1], "DateSavedOnDbNOW", 11111111, batteryVoltage)) /// save DATE NOW for BrckDevice
         {
             return "Sucess : Device data added";
         } else {
@@ -147,7 +149,7 @@ public class ServerController {
                 String tankID = result.getString("from");
                 tankID = tankID.substring(1, 13);         //+254792714708 ignore the + for easy query of tankID on Database
                 double level = sCodeProc.SMSMessageProcessing(result.getString("text"), tankID);       //TODO:- Cleaner way of doing this!
-                double currentTankCapacity = 0.00;
+                double[] currentTankCapacity = {0,0};
                 System.out.println("SMSMessageProcessing() ran successfully: Level is:" + level);
 
                 if (level < 0) {        //no negtives in DB                    
@@ -159,15 +161,15 @@ public class ServerController {
                         ///System.out.println("Just about to call TankVolume()");
                         //currentTankCapacity = DataAccessObject.TankVolume(tankID, level);      //Get current tank capacity (Cubic Metres)
                         
-                         currentTankCapacity = DataAccessObject.calculateCapacity(tankID, level);
+                         currentTankCapacity = DataAccessObject.calculateCapacity(tankID, level);     //
                         
                     } catch (Exception ex) {
                         System.out.println("EXCEPTION calling TankVolume()" + ex);
                     }
 
                     //currentTankCapacity *= 1000; // Cubic metres to Litres
-                    System.out.println("currentTankCapacity:" + currentTankCapacity + "tankID" + tankID);
-                    DataAccessObject.addSMSProcessedData(level, tankID, currentTankCapacity, result.getString("date"), LastReceivedValueToAfricasTalking);   // save level, capacity
+                   // System.out.println("currentTankCapacity:" + currentTankCapacity + "tankID" + tankID);
+                    DataAccessObject.addSMSProcessedData(level, tankID, currentTankCapacity[0], result.getString("date"), LastReceivedValueToAfricasTalking);   // save level, capacity
                     DataAccessObject.save_LastReceivedId(LastReceivedValueToAfricasTalking, result.getString("date"));   // save updated lastReceivedId on LastReceived Table
                     System.out.println("addSMSProcessedData() ran successfully");
                 }
